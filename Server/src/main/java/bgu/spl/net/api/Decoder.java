@@ -42,6 +42,8 @@ public class Decoder {
     }
 
     public Message popMessage() {
+        if(len>0)
+            vars.add(popString());
         return message;
     }
 
@@ -56,10 +58,38 @@ public class Decoder {
             case 3:
                 logoutOp();
                 break;
+            case 4:
+                followOp();
+                break;
+            case 5:
+                postOp();
+                break;
 
         }
     }
 
+    private void postOp() {
+        if(currentByte=='\0') {
+            vars.add(popString());
+            vars.add("Public");
+        }
+        else
+            pushByte(currentByte);
+    }
+
+
+    private void followOp() {
+        if(vars.size()==0){
+            if(currentByte=='\1')
+                vars.add("1");
+            else
+                vars.add("0");
+        } else if(currentByte==';'){
+            vars.add(popString());
+        } else{
+            pushByte(currentByte);
+        }
+    }
 
     private void registerOp() {
         if(currentByte=='\0'){

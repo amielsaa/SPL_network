@@ -38,7 +38,7 @@ public class BGSEncoderDecoder implements MessageEncoderDecoder<Message> {
 //                vars.add(popString());
             Message msg = decoder.popMessage();
             decoder.clean();
-            opBytes = new byte[2];
+            //opBytes = new byte[2];
             opCode = -1;
             shortcount = 0;
             return msg;
@@ -109,14 +109,20 @@ public class BGSEncoderDecoder implements MessageEncoderDecoder<Message> {
         short msgOpCode = ((AckMsg)message).getMsgOpCode();
         byte[] opCodeArray = shortToBytes((short)10);
         byte[] msgOpCodeArray = shortToBytes(msgOpCode);
+        byte[] stringBytes = "ACK".getBytes();
         //follow case
         if(msgOpCode==4){
-
+            int bytesArrayLength = message.getVars().get(1).length()+opCodeArray.length+msgOpCodeArray.length+2;
+            bytesArray = new byte[bytesArrayLength];
+            byte[] usernameBytes = message.getVars().get(1).getBytes();
+            System.arraycopy(opCodeArray,0,bytesArray,0,2);
+            System.arraycopy(msgOpCodeArray,0,bytesArray,2,2);
+            System.arraycopy(usernameBytes,0,bytesArray,4,usernameBytes.length);
+            bytesArray[bytesArrayLength-2] = '\0';
         }//logstat/stat case
         else if(msgOpCode==7 | msgOpCode==8) {
 
-        } else{
-            byte[] stringBytes = "ACK".getBytes();
+        } else{//need to change
             bytesArray = new byte[stringBytes.length+5];
             System.arraycopy(opCodeArray,0,bytesArray,0,2);
             System.arraycopy(msgOpCodeArray,0,bytesArray,2,2);

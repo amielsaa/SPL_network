@@ -6,16 +6,16 @@ public class AckMsg implements Message{
 
     private short msgOpCode;
     private List<String> vars;
-    private List<Short> shortVars;
+    //private List<Short> shortVars;
 
     public AckMsg(short msgOpCode) {
         this.msgOpCode=msgOpCode;
     }
 
-    public AckMsg(short msgOpCode,List<String> vars,List<Short> shortVars) {
+    public AckMsg(short msgOpCode,List<String> vars) {
         this.msgOpCode=msgOpCode;
         this.vars=vars;
-        this.shortVars=shortVars;
+        //this.shortVars=shortVars;
     }
 
     public short getMsgOpCode() {

@@ -3,6 +3,7 @@ package bgu.spl.net.api.bidi;
 import bgu.spl.net.api.msg.AckMsg;
 import bgu.spl.net.api.msg.ErrorMsg;
 import bgu.spl.net.api.msg.Message;
+import bgu.spl.net.api.msg.NotificationMsg;
 import bgu.spl.net.api.obj.SharedData;
 
 import java.util.ArrayList;
@@ -49,7 +50,57 @@ public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<T> {
             case 3:
                 logout();
                 break;
+            case 4:
+                follow(vars);
+                break;
+            case 5:
+                post(vars);
+                break;
         }
+    }
+
+    private void post(List<String> vars) {
+        Message res;
+        String post = vars.get(0);
+        List<String> usernames = new ArrayList<>();
+        String[] splittedBySpace = post.split(" ");
+        for(String s : splittedBySpace) {
+            if(s.contains("@"))
+                usernames.add(s.substring(s.indexOf("@")+1));
+        }
+
+        String currentUsername = data.getUsernameById(clientOwnerId);
+        boolean success = data.post(post,vars.get(1),clientOwnerId);
+        if(success) {
+            res = new AckMsg((short)5);
+        } else {
+            res = new ErrorMsg((short)5);
+        }
+        connections.send(clientOwnerId,(T)res);
+        if(success) {
+            List<String> notifVars = new ArrayList<>();
+            notifVars.add(currentUsername);
+            notifVars.add(post);
+            notifVars.add(vars.get(1));
+            Message notification = new NotificationMsg(notifVars);
+            List<Integer> clientIdToPost = data.getClientIdsToPost(usernames, currentUsername,notification);
+            for(Integer in : clientIdToPost) {
+                connections.send(in,(T)notification);
+            }
+        }
+    }
+
+    private void follow(List<String> vars) {
+        Message res;
+        int op = Integer.parseInt(vars.get(0));
+        String username = vars.get(1);
+        boolean success = data.follow(op,username,clientOwnerId);
+        if(success) {
+            res = new AckMsg((short)4,vars);
+        } else{
+            res = new ErrorMsg((short)4);
+        }
+        connections.send(clientOwnerId,(T)res);
     }
 
     private void logout() {
@@ -87,7 +138,7 @@ public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<T> {
         List<String> resArray = new ArrayList<>();
         resArray.add("1");
         if(success)
-            res = new AckMsg((short)1,resArray,null);
+            res = new AckMsg((short)1,resArray);
         else
             res = new ErrorMsg((short)1);
         connections.send(clientOwnerId,(T)res);

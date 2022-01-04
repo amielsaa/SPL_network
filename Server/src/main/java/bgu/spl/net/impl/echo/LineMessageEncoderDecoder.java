@@ -7,19 +7,49 @@ import java.util.Arrays;
 public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> {
 
     private byte[] bytes = new byte[1 << 10]; //start with 1k
+    private byte[] opBytes = new byte[4];
     private int len = 0;
+    private short opCode = -1;
+    private short ackOpCode = -1;
+    private short shortcount = 0;
+
 
     @Override
     public String decodeNextByte(byte nextByte) {
         //notice that the top 128 ascii characters have the same representation as their utf-8 counterparts
         //this allow us to do the following comparison
 
-        if (nextByte == ';') {
+        if(opCode==-1 | (opCode==10 && shortcount<4) ) {
+            pushByteToShort(nextByte);
+            if(shortcount==2){
+                opCode = popShort(0);
+            } else if(shortcount==4)
+                ackOpCode = popShort(2);
+        }
+        else if(nextByte=='\0' && ackOpCode==(short)4){
+            String returnString = "ACK " +ackOpCode+" "+popString();
+            clean();
+            return returnString;
+        }
+        else if (nextByte == ';') {
+            if(ackOpCode!=-1) {
+                String returnString = popString() + ackOpCode;
+                clean();
+                return returnString;
+            }
+            clean();
             return popString();
+        } else{
+            pushByte(nextByte);
         }
 
-        pushByte(nextByte);
         return null; //not a line yet
+    }
+
+    public void clean() {
+        ackOpCode=-1;
+        shortcount=0;
+        opCode=-1;
     }
 
     @Override
@@ -35,9 +65,6 @@ public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> 
         bytes[len++] = nextByte;
     }
     private byte[] getZeroBytes(String message){
-        byte[] bytesArray = new byte[1<<10];
-        int byteIndex = 0;
-
 
         String[] splitted = message.split(" ");
         short num=getOpCode(splitted[0]);
@@ -61,6 +88,16 @@ public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> 
         } else if(num==3) {
             merged = new byte[shortBytes.length+1];
             System.arraycopy(shortBytes,0,merged,0,2);
+        } else if(num==4) {
+            stringBytes = splitted[2].getBytes();
+            byte followByte = '\0';
+            if(splitted[1].equals("1"))
+                followByte='\1';
+            merged = new byte[stringBytes.length+4];
+            System.arraycopy(shortBytes,0,merged,0,2);
+            merged[2] = followByte;
+            System.arraycopy(stringBytes,0,merged,3,stringBytes.length);
+
         }
 
         merged[merged.length-1] = ';';
@@ -88,6 +125,16 @@ public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> 
         return bytesArray;
     }
 
+    private void pushByteToShort(byte nextByte) {
+        opBytes[shortcount++] = nextByte;
+    }
+
+    private short popShort(int index) {
+        short result = (short)((opBytes[index] & 0xff) << 8);
+        result += (short)(opBytes[index+1] & 0xff);
+        return result;
+    }
+
 
     private short getOpCode(String op) {
         switch (op) {
@@ -97,6 +144,8 @@ public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> 
                 return 2;
             case "LOGOUT":
                 return 3;
+            case "FOLLOW":
+                return 4;
         }
         return 0;
     }

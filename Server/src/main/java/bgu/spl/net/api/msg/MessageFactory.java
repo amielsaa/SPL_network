@@ -12,6 +12,10 @@ public class MessageFactory {
                 return new LoginMsg(vars,shorts);
             case 3:
                 return new LogoutMsg();
+            case 4:
+                return new FollowMsg(vars);
+            case 5:
+                return new PostMsg(vars);
         }
         return null;
     }

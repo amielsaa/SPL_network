@@ -19,7 +19,7 @@ public class EchoClient {
         Scanner sc = new Scanner(System.in);
         //BufferedReader and BufferedWriter automatically using UTF-8 encoding
         try (EchoClientTest echo = new EchoClientTest(args[0],7777)) {
-            while(true){
+            while(echo.shouldRun()){
                 //
                 System.out.println("enter: ");
                 String ms = sc.nextLine();
