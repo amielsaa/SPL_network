@@ -2,6 +2,7 @@ package bgu.spl.net.api.bidi;
 
 import bgu.spl.net.srv.bidi.ConnectionHandler;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,6 +34,11 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
     @Override
     public void disconnect(int connectionId) {
+        try {
+            activeClients.get(connectionId).close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         activeClients.remove(connectionId);
     }
 

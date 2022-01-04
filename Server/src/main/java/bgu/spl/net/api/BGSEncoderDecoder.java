@@ -1,6 +1,8 @@
 package bgu.spl.net.api;
 
+import bgu.spl.net.api.msg.AckMsg;
 import bgu.spl.net.api.msg.Message;
+import bgu.spl.net.api.msg.MessageFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -15,24 +17,34 @@ public class BGSEncoderDecoder implements MessageEncoderDecoder<Message> {
     private short opCode = -1;
     private int shortcount = 0;
     private List<String> vars = new ArrayList<>();
+    private Decoder decoder = new Decoder();
 
     @Override
     public Message decodeNextByte(byte nextByte) {
+        //add if not a character but a number
+
         if(opCode==-1) {
             pushByteToShort(nextByte);
             if(shortcount==2){
                 popShort();
+                decoder.setOpCode(opCode);
             }
         }
-        else if(nextByte =='\0'){
-            vars.add(popString());
-        }
+//        else if(nextByte =='\0'){
+//            vars.add(popString());
+//        }
         else if (nextByte == ';') {
-            if(len>0)
-                vars.add(popString());
-            return popFinalResult();
+//            if(len>0)
+//                vars.add(popString());
+            Message msg = decoder.popMessage();
+            decoder.clean();
+            opBytes = new byte[2];
+            opCode = -1;
+            shortcount = 0;
+            return msg;
         } else {
-            pushByte(nextByte);
+            decoder.decode(nextByte);
+            //pushByte(nextByte);
         }
 
         return null;
@@ -40,11 +52,24 @@ public class BGSEncoderDecoder implements MessageEncoderDecoder<Message> {
 
     @Override
     public byte[] encode(Message message) {
-        return message.getBytes();
+        //notification
+        if(message.getOpCode()==9){
+
+        }//ack
+        else if(message.getOpCode()==10){
+            return encodeACK(message);
+        }//error
+        else if(message.getOpCode()==11){
+
+        }//block
+        else if(message.getOpCode()==12){
+
+        }
+        return null;
     }
 
     private void pushByteToShort(byte nextByte) {
-        bytes[shortcount++] = nextByte;
+        opBytes[shortcount++] = nextByte;
     }
 
     private void pushByte(byte nextByte) {
@@ -67,15 +92,46 @@ public class BGSEncoderDecoder implements MessageEncoderDecoder<Message> {
         return result;
     }
 
-    private Message popFinalResult() {
-        Message finalResult = new Message(opCode,vars);
-        vars = new ArrayList<>();
-        opBytes = new byte[2];
-        opCode = -1;
-        shortcount = 0;
-        len = 0;
+//    private Message popFinalResult() {
+//        Message finalResult = MessageFactory.createMessage(opCode,vars);
+//        System.out.println(vars.toString());
+//        vars = new ArrayList<>();
+//        opBytes = new byte[2];
+//        opCode = -1;
+//        shortcount = 0;
+//        len = 0;
+//
+//        return finalResult;
+//    }
 
-        return finalResult;
+    private byte[] encodeACK(Message message) {
+        byte[] bytesArray = new byte[0];
+        short msgOpCode = ((AckMsg)message).getMsgOpCode();
+        byte[] opCodeArray = shortToBytes((short)10);
+        byte[] msgOpCodeArray = shortToBytes(msgOpCode);
+        //follow case
+        if(msgOpCode==4){
+
+        }//logstat/stat case
+        else if(msgOpCode==7 | msgOpCode==8) {
+
+        } else{
+            byte[] stringBytes = "ACK".getBytes();
+            bytesArray = new byte[stringBytes.length+5];
+            System.arraycopy(opCodeArray,0,bytesArray,0,2);
+            System.arraycopy(msgOpCodeArray,0,bytesArray,2,2);
+            System.arraycopy(stringBytes,0,bytesArray,4,stringBytes.length);
+        }
+        bytesArray[bytesArray.length-1] = ';';
+        return bytesArray;
+    }
+
+    private byte[] shortToBytes(short num)
+    {
+        byte[] bytesArr = new byte[2];
+        bytesArr[0] = (byte)((num >> 8) & 0xFF);
+        bytesArr[1] = (byte)(num & 0xFF);
+        return bytesArr;
     }
 
 

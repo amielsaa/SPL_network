@@ -21,17 +21,18 @@ public class EchoClientTest implements Closeable {
     }
 
     public void send(String msg) throws IOException {
-
-        out.write(encdec.encode(msg));
-        out.flush();
+        if(sock.isConnected()) {
+            out.write(encdec.encode(msg));
+            out.flush();
+        }
     }
 
     public void receive() throws IOException {
         int read;
-        while ((read = in.read()) >= 0) {
+        while (sock.isConnected() && (read = in.read()) >= 0) {
             String msg = encdec.decodeNextByte((byte) read);
             if (msg != null) {
-                System.out.println(">"+msg);
+                System.out.println(msg);
                 break;
             }
         }
