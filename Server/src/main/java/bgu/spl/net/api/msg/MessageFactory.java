@@ -16,6 +16,14 @@ public class MessageFactory {
                 return new FollowMsg(vars);
             case 5:
                 return new PostMsg(vars);
+            case 6:
+                return new PmMsg(vars);
+            case 7:
+                return new LogstatMsg(vars);
+            case 8:
+                return new StatMsg(vars);
+            case 12:
+                return new BlockMsg(vars);
         }
         return null;
     }

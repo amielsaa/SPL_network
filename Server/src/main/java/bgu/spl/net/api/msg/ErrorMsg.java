@@ -15,6 +15,8 @@ public class ErrorMsg implements Message {
         return 11;
     }
 
+    public short getMsgOpCode() { return msgOpCode; }
+
     @Override
     public List<String> getVars() {
         return null;

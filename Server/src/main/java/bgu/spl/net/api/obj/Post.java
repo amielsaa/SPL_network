@@ -4,21 +4,31 @@ import java.util.List;
 
 public class Post {
 
-    private List<String> receivers;
+    //private List<String> receivers;
     private String sender;
     private String content;
     private String type;
+    private String recipient;
 
+    //pm constructor
+    public Post(String sender,String recipient,String content,String type) {
+        //this.receivers = receivers;
+        this.sender = sender;
+        this.content = content;
+        this.type = type;
+        this.recipient = recipient;
+    }
+
+    //post constructor
     public Post(String sender,String content,String type) {
         //this.receivers = receivers;
         this.sender = sender;
         this.content = content;
         this.type = type;
+
     }
 
-    public List<String> getReceivers() {
-        return receivers;
-    }
+
 
     public String getSender() {
         return sender;

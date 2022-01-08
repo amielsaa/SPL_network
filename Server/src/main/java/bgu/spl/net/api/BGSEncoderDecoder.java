@@ -18,6 +18,7 @@ public class BGSEncoderDecoder implements MessageEncoderDecoder<Message> {
     private int shortcount = 0;
     private List<String> vars = new ArrayList<>();
     private Decoder decoder = new Decoder();
+    private Encoder encoder = new Encoder();
 
     @Override
     public Message decodeNextByte(byte nextByte) {
@@ -52,20 +53,11 @@ public class BGSEncoderDecoder implements MessageEncoderDecoder<Message> {
 
     @Override
     public byte[] encode(Message message) {
-        //notification
-        if(message.getOpCode()==9){
+        encoder.setOpCode(message.getOpCode());
+        byte[] bytes = encoder.encode(message);
+        encoder.clean();
 
-        }//ack
-        else if(message.getOpCode()==10){
-            return encodeACK(message);
-        }//error
-        else if(message.getOpCode()==11){
-
-        }//block
-        else if(message.getOpCode()==12){
-
-        }
-        return null;
+        return bytes;
     }
 
     private void pushByteToShort(byte nextByte) {

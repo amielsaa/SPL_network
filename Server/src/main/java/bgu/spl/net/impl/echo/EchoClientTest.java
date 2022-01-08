@@ -13,6 +13,7 @@ public class EchoClientTest implements Closeable {
     private final BufferedInputStream in;
     private final BufferedOutputStream out;
     private boolean connected = true;
+    private int zeroCounter = 0;
 
     public EchoClientTest(String host, int port) throws IOException {
         sock = new Socket(host, port);
@@ -32,6 +33,16 @@ public class EchoClientTest implements Closeable {
         int read;
         while (sock.isConnected() && (read = in.read()) >= 0) {
             String msg = encdec.decodeNextByte((byte) read);
+//            System.out.println(read);
+//            if((byte)read == 0)
+//                zeroCounter++;
+//            else
+//                zeroCounter=0;
+//            if(zeroCounter>10){
+//                zeroCounter=0;
+//                break;
+//            }
+
             if (msg != null) {
                 if(msg.equals("ACK3"))
                     close();

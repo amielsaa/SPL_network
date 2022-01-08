@@ -5,8 +5,10 @@ import bgu.spl.net.api.msg.ErrorMsg;
 import bgu.spl.net.api.msg.Message;
 import bgu.spl.net.api.msg.NotificationMsg;
 import bgu.spl.net.api.obj.SharedData;
+import bgu.spl.net.api.obj.User;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<T> {
@@ -56,12 +58,81 @@ public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<T> {
             case 5:
                 post(vars);
                 break;
+            case 6:
+                pm(vars);
+                break;
+            case 7:
+                logstat();
+                break;
+            case 8:
+                stat(vars);
+                break;
+            case 12:
+                block(vars);
+                break;
         }
     }
+
+    private void block(List<String> vars) {
+        Message res;
+        if(data.block(clientOwnerId,vars.get(0)))
+            res = new AckMsg((short)12);
+        else
+            res = new ErrorMsg((short)12);
+        connections.send(clientOwnerId,(T)res);
+    }
+
+    private void stat(List<String> vars) {
+        Message res;
+        String usernames = vars.get(0);
+        String[] splitted = usernames.split("\\|");
+        //for debugging
+        System.out.println(splitted.toString());
+        List<String> users = data.getUsersStat(clientOwnerId,splitted);
+        if(users!=null) {
+            res = new AckMsg((short)8,users);
+        }else
+            res = new ErrorMsg((short)8);
+        connections.send(clientOwnerId,(T)res);
+
+    }
+
+    private void logstat() {
+        Message res;
+        List<String> activeUsers = data.getActiveUsersForLogstat(clientOwnerId);
+        if(activeUsers!=null) {
+            res = new AckMsg((short)7,activeUsers);
+        }else
+            res = new ErrorMsg((short)7);
+        connections.send(clientOwnerId,(T)res);
+
+    }
+
+    private void pm(List<String> vars) {
+        Message res;
+        boolean success = data.pm(vars.get(1),vars.get(0),vars.get(2),clientOwnerId);
+        if(success) {
+            res = new AckMsg((short)6);
+        } else
+            res = new ErrorMsg((short)6);
+        connections.send(clientOwnerId,(T)res);
+        if(success) {
+            List<String> varsNotf = new ArrayList<>();
+            varsNotf.add(data.getUsernameById(clientOwnerId));
+            varsNotf.add(vars.get(1) + " " + vars.get(2));
+            varsNotf.add("PM");
+            Message notification = new NotificationMsg(varsNotf);
+            int notfResult = data.getClientIdToPm(vars.get(0),notification);
+            if(notfResult!=-1)
+                connections.send(notfResult,(T)notification);
+        }
+    }
+
 
     private void post(List<String> vars) {
         Message res;
         String post = vars.get(0);
+        //System.out.println(vars.toString());
         List<String> usernames = new ArrayList<>();
         String[] splittedBySpace = post.split(" ");
         for(String s : splittedBySpace) {
@@ -94,6 +165,7 @@ public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<T> {
         Message res;
         int op = Integer.parseInt(vars.get(0));
         String username = vars.get(1);
+        //User userToFollow = data.getUser(username);
         boolean success = data.follow(op,username,clientOwnerId);
         if(success) {
             res = new AckMsg((short)4,vars);
@@ -119,13 +191,23 @@ public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<T> {
 
     private void login(List<String> vars) {
         Message res;
-        if(data.login(vars.get(0),vars.get(1),vars.get(2),clientOwnerId)) {
+        boolean success = data.login(vars.get(0),vars.get(1),vars.get(2),clientOwnerId);
+        if(success) {
             res = new AckMsg((short)2);
             //delete - for debugging
             System.out.println(vars.get(0)+" logged in: true");
         } else
             res = new ErrorMsg((short)2);
         connections.send(clientOwnerId,(T)res);
+        //checking for pending notification after success login
+        if(success){
+            List<Message> notifcation = data.checkForPendingNotification(clientOwnerId);
+            for(Message m : notifcation) {
+                connections.send(clientOwnerId,(T)m);
+
+            }
+        }
+
     }
 
     private void register(List<String> vars) {

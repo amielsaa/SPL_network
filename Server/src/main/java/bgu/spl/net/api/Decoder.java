@@ -49,6 +49,8 @@ public class Decoder {
 
     private void actByOpCode() {
         switch (opCode){
+            case 0:
+                break;
             case 1:
                 registerOp();
                 break;
@@ -64,8 +66,45 @@ public class Decoder {
             case 5:
                 postOp();
                 break;
+            case 6:
+                pmOp();
+                break;
+            case 7:
+                logstatOp();
+                break;
+            case 8:
+                statOp();
+                break;
+            case 12:
+                blockOp();
+                break;
 
         }
+    }
+
+    private void blockOp() {
+        if(currentByte=='\0')
+            vars.add(popString());
+        else
+            pushByte(currentByte);
+    }
+
+    private void statOp() {
+        if(currentByte=='\0')
+            vars.add(popString());
+        else
+            pushByte(currentByte);
+    }
+
+    private void logstatOp() {
+
+    }
+
+    private void pmOp() {
+        if(currentByte=='\0')
+            vars.add(popString());
+        else
+            pushByte(currentByte);
     }
 
     private void postOp() {
