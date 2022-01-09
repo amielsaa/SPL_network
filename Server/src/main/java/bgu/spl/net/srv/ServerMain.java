@@ -6,7 +6,7 @@ import bgu.spl.net.impl.echo.LineMessageEncoderDecoder;
 
 public class ServerMain {
     public static void main(String[] args) {
-        Server.threadPerClient(7777,
+        Server.threadPerClient(Integer.parseInt(args[0]),
                 ()->new BidiMessagingProtocolImpl<>(),
                 BGSEncoderDecoder::new).serve();
     }
