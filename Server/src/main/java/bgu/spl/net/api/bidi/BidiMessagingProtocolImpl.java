@@ -110,16 +110,18 @@ public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<T> {
 
     private void pm(List<String> vars) {
         Message res;
-        boolean success = data.pm(vars.get(1),vars.get(0),vars.get(2),clientOwnerId);
+        String content = data.filter(vars.get(1));
+        boolean success = data.pm(content,vars.get(0),vars.get(2),clientOwnerId);
         if(success) {
             res = new AckMsg((short)6);
         } else
             res = new ErrorMsg((short)6);
         connections.send(clientOwnerId,(T)res);
         if(success) {
+
             List<String> varsNotf = new ArrayList<>();
             varsNotf.add(data.getUsernameById(clientOwnerId));
-            varsNotf.add(vars.get(1) + " " + vars.get(2));
+            varsNotf.add(content + " " + vars.get(2));
             varsNotf.add("PM");
             Message notification = new NotificationMsg(varsNotf);
             int notfResult = data.getClientIdToPm(vars.get(0),notification);
@@ -131,8 +133,7 @@ public class BidiMessagingProtocolImpl<T> implements BidiMessagingProtocol<T> {
 
     private void post(List<String> vars) {
         Message res;
-        String post = vars.get(0);
-        //System.out.println(vars.toString());
+        String post = data.filter(vars.get(0));
         List<String> usernames = new ArrayList<>();
         String[] splittedBySpace = post.split(" ");
         for(String s : splittedBySpace) {

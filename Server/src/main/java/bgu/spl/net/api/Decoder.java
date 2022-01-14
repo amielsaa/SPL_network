@@ -123,7 +123,7 @@ public class Decoder {
                 vars.add("1");
             else
                 vars.add("0");
-        } else if(currentByte==';'){
+        } else if(currentByte=='\0'){
             vars.add(popString());
         } else{
             pushByte(currentByte);

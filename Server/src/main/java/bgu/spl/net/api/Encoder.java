@@ -105,10 +105,10 @@ public class Encoder {
             }
 
         } else{//need to change
-            bytesArray = new byte[stringBytes.length+5];
+            bytesArray = new byte[5];
             System.arraycopy(opCodeArray,0,bytesArray,0,2);
             System.arraycopy(msgOpCodeArray,0,bytesArray,2,2);
-            System.arraycopy(stringBytes,0,bytesArray,4,stringBytes.length);
+            //System.arraycopy(stringBytes,0,bytesArray,4,stringBytes.length);
         }
         bytesArray[bytesArray.length-1] = ';';
         return bytesArray;

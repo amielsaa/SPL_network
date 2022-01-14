@@ -100,7 +100,7 @@ public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> 
             clean();
             return returnString;
         }else{
-            pushByte(nextByte);
+            pushByteToShort(nextByte);
         }
         return null;
     }

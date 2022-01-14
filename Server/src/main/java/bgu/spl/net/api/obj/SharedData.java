@@ -4,6 +4,7 @@ import bgu.spl.net.api.msg.Message;
 import bgu.spl.net.api.msg.NotificationMsg;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +20,7 @@ public class SharedData {
     private final ConcurrentHashMap<String,List<Post>> usersPostsMap;
 
     private final List<String> pendingNotificationUsers;
+    private final List<String> filterWords = Arrays.asList("spl","shit","trump","war","ass","fuck","splassignment2");
 
 
     private static class  SharedDataHolder {
@@ -35,6 +37,17 @@ public class SharedData {
         return SharedDataHolder.instance;
     }
 
+    public String filter(String line) {
+        String filteredString = line;
+        String[] splittedLine = line.split(" ");
+        for(int i =0;i<splittedLine.length;i++) {
+            String currentWord = splittedLine[i].trim();
+            if(filterWords.contains(currentWord))
+                filteredString = filteredString.replaceAll(currentWord,"****");
+        }
+        return filteredString;
+    }
+
     public boolean block(int clientOwner, String userToBlock) {
         User user = getUser(getUsernameById(clientOwner));
         if(user!=null && user.isConnected() && user.addBlocked(userToBlock)) {
@@ -47,7 +60,8 @@ public class SharedData {
 
     public boolean pm(String post,String recipient,String date,int clientOwner) {
         User user = getUser(clientIdUsernameMap.get(clientOwner));
-        if(user!=null && user.isConnected() && usersMap.containsKey(recipient) && user.getFollowers().contains(recipient) && !user.checkIfUserBlocked(recipient)) {
+        User recipentUser = getUser(recipient);
+        if(user!=null && user.isConnected() && recipentUser != null && recipentUser.getFollowers().contains(user.getUsername()) && !recipentUser.checkIfUserBlocked(user.getUsername())) {
             Post newPm = new Post(user.getUsername(),recipient,post +" " +date,"PM");
             addToPostMap(newPm,user.getUsername());
             return true;
@@ -147,7 +161,7 @@ public class SharedData {
 
 
 
-    public void addToPostMap(Post post, String username) {
+    private void addToPostMap(Post post, String username) {
         if(!usersPostsMap.containsKey(username))
             usersPostsMap.put(username,new ArrayList<>());
         usersPostsMap.get(username).add(post);
@@ -165,7 +179,11 @@ public class SharedData {
 
     public boolean follow(int op,String username,int clientOwner) {
         User userToFollow = getUser(username);
-        User user = usersMap.get(clientIdUsernameMap.get(clientOwner));
+        User user;
+        if(clientIdUsernameMap.get(clientOwner) == null)
+            user = null;
+        else
+            user = usersMap.get(clientIdUsernameMap.get(clientOwner));
         if(user!=null && userToFollow!=null && user.isConnected()) {
             return userToFollow.follow(op,user);
         }
@@ -182,7 +200,7 @@ public class SharedData {
     }
 
     public boolean login(String username, String pw, String captcha,int clientOwnerId) {
-        if(captcha.equals("1") && userExists(username) && getUser(username).getPw().equals(pw)){
+        if(captcha.equals("1") && userExists(username) && getUser(username).getPw().equals(pw) && !getUser(username).isConnected() && !clientIdUsernameMap.containsKey(clientOwnerId)){
             getUser(username).setConnected(true,clientOwnerId);
             if(!clientIdUsernameMap.containsKey(clientOwnerId))
                 clientIdUsernameMap.put(clientOwnerId,username);
